@@ -1,15 +1,10 @@
 pipeline {
-	agent { label 'linux' }
-  	options {
-    	 buildDiscarder(logRotator(numToKeepStr: '5'))
-  	}
-	stages {
-	 stage('Scan') {
-	  steps {
-	   withSonarQubeEnv(installationName: 'sonar') {
-	    sh './mvnw clean org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.0.2155:sonar'
-	  }
-	}
-  }
- }
+	agent { docker { image 'python:3.13.0-alpine3.20' } }
+    stages {
+        stage('build') {
+            steps {
+                sh 'python --version'
+            }
+        }
+    }
 }
