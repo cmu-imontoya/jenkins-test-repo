@@ -1,6 +1,9 @@
 pipeline {
     agent any
-    
+    tools {
+        maven 'Maven'
+    }
+
     stages {
         stage('Git Checkout') {
             steps {
@@ -9,34 +12,12 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    pip install pylint
-                '''
-                echo 'Dependencies Installed'
-            }
-        }
-
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('ServerNameSonar') {
-                    sh '''
-                        . venv/bin/activate
-                        sonar-scanner \
-                        -Dsonar.projectKey=ProjectNameSonar \
-                        -Dsonar.projectName="ProjectNameSonar" \
-                        -Dsonar.language=py \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://localhost:9000 \
-                        -Dsonar.python.pylint.reportPath=pylint-report.txt
-                    '''
+                    bat '''mvn clean verify sonar:sonar -Dsonar.projectKey=ProjectNameSonar -Dsonar.projectName='ProjectNameSonar' -Dsonar.host.url=http://localhost:9000'''
+                    echo 'SonarQube Analysis Completed'
                 }
-                echo 'SonarQube Analysis Completed'
             }
         }
     }
-
-}
