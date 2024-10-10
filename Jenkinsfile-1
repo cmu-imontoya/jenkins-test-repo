@@ -1,24 +1,42 @@
 pipeline {
     agent any
-    tools {
-        maven 'Maven'
-    }
-
+    
     stages {
         stage('Git Checkout') {
             steps {
-                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/ZudaPradana/sonar']])
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/cmu-imontoya/jenkins-test-repo']])
                 echo 'Git Checkout Completed'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install pylint
+                '''
+                echo 'Dependencies Installed'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('ServerNameSonar') {
-                    bat '''mvn clean verify sonar:sonar -Dsonar.projectKey=ProjectNameSonar -Dsonar.projectName='ProjectNameSonar' -Dsonar.host.url=http://localhost:9000''' //port 9000 is default for sonar
-                    echo 'SonarQube Analysis Completed'
+                    sh '''
+                        . venv/bin/activate
+                        sonar-scanner \
+                        -Dsonar.projectKey=ProjectNameSonar \
+                        -Dsonar.projectName="ProjectNameSonar" \
+                        -Dsonar.language=py \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://localhost:9000 \
+                        -Dsonar.python.pylint.reportPath=pylint-report.txt
+                    '''
                 }
+                echo 'SonarQube Analysis Completed'
             }
         }
     }
+
 }
