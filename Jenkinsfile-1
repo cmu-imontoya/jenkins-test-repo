@@ -1,9 +1,5 @@
 pipeline {
     agent any
-    tools {
-        maven 'maven'
-    }
-
     stages {
         stage('Git Checkout') {
             steps {
@@ -13,11 +9,13 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
+            def scannerHome = tool 'SonarQube Scanner 2.8';
             steps {
                 withSonarQubeEnv(installationName: 'sonar') {
-                    echo 'SonarQube Analysis Completed'
+                    sh "${scannerHome}/bin/sonar-scanner"
                 }
             }
         }
+        
     }
 }
