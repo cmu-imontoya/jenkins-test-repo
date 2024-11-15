@@ -3,6 +3,7 @@ pipeline {
     tools {
         maven 'maven'
     }
+
     stages {
         stage('Git Checkout') {
             steps {
@@ -13,18 +14,10 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonar') {
-                    sh '''
-                    sonar:6.2.1.4610 \
-                      -Dsonar.projectKey=jenkins \
-                      -Dsonar.sources=. \
-                      -Dsonar.host.url=http://34.138.255.10:9000 \
-                      -Dsonar.login=c1811b63-ca06-47a4-9ff4-ee9febc11f02
-                    '''
+                withSonarQubeEnv(installationName: 'sonar') {
                     echo 'SonarQube Analysis Completed'
                 }
             }
         }
     }
 }
-
