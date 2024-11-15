@@ -3,6 +3,9 @@ pipeline {
     tools {
         maven 'maven'
     }
+    environment {
+        PATH = "/path/to/sonar-scanner/bin:${env.PATH}"
+    }
 
     stages {
         stage('Git Checkout') {
