@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         SONARQUBE_URL = "http://34.138.255.10:9000"            // Replace with SonarQube server URL
-        SONARQUBE_TOKEN = credentials('sonar-token')           // Jenkins credentials for SonarQube token
+        SONARQUBE_TOKEN = credentials('sonar')           // Jenkins credentials for SonarQube token
         DATAPROC_CLUSTER = "project-option1"                   // Replace with your Dataproc cluster name
         GCP_REGION = "us-east1"                                // Replace with the Dataproc cluster region
         GCS_BUCKET = "dataproc-bucket-11-14-2024"              // Replace with your GCS bucket for staging files
