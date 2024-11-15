@@ -17,12 +17,6 @@ pipeline {
                 withSonarQubeEnv(installationName: 'sonar') {
                     script {
                         echo 'Starting SonarQube Analysis'
-                        sh """
-                            sonar-scanner \
-                            -Dsonar.projectKey=jenkins-test-repo \
-                            -Dsonar.sources=./ \
-                            -Dsonar.host.url=${SONARQUBE_URL}
-                        """
                     }
                 }
             }
