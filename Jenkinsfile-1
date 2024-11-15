@@ -1,24 +1,87 @@
-
 pipeline {
     agent any
-    tools {
-        maven 'maven'
+
+    environment {
+        SONARQUBE_URL = "http://34.138.255.10:9000"   // Replace with SonarQube server URL
+        SONARQUBE_TOKEN = credentials('sonar-token')      // Jenkins credentials for SonarQube
+        DATAPROC_CLUSTER = "project-option1"          // Replace with your Dataproc cluster name
+        GCP_REGION = "us-east1"                           // Replace with the Dataproc cluster region
+        GCS_BUCKET = "dataproc-bucket-11-14-2024"                      // Replace with your GCS bucket for staging files
     }
 
     stages {
-        stage('Git Checkout') {
+        stage('Checkout Code') {
             steps {
-                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/cmu-imontoya/jenkins-test-repo']])
-                echo 'Git Checkout Completed'
+                git url: 'https://github.com/cmu-imontoya/jenkins-test-repo/', branch: 'main'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv(installationName: 'sonar') {
-                    echo 'SonarQube Analysis Completed'
+                withSonarQubeEnv('SonarQube') { // Make sure Jenkins is configured with SonarQube
+                    sh '''
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=your_project_key \
+                        -Dsonar.host.url=$SONARQUBE_URL \
+                        -Dsonar.login=$SONARQUBE_TOKEN
+                    '''
                 }
             }
         }
+
+        stage('Quality Gate Check') {
+            steps {
+                script {
+                    // Wait for SonarQube analysis to complete
+                    def qualityGate = waitForQualityGate()
+                    if (qualityGate.status != 'OK') {
+                        error "SonarQube Quality Gate failed with status: ${qualityGate.status}"
+                    }
+                    else{
+                        echo 'SonarQube Analysis Completed'
+                    }
+                }
+            }
+        }
+/*
+        stage('Upload Scripts to GCS') {
+            steps {
+                script {
+                    // Copy mapper and reducer to Google Cloud Storage bucket
+                    sh "gsutil cp mapper.py gs://$GCS_BUCKET/"
+                    sh "gsutil cp reducer.py gs://$GCS_BUCKET/"
+                }
+            }
+        }
+
+        stage('Run Hadoop Job on Dataproc') {
+            steps {
+                script {
+                    // Submit Hadoop job on Dataproc
+                    sh """
+                        gcloud dataproc jobs submit hadoop \
+                        --cluster=$DATAPROC_CLUSTER \
+                        --region=$GCP_REGION \
+                        --jar=file:///usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
+                        -- -files gs://$GCS_BUCKET/mapper.py,gs://$GCS_BUCKET/reducer.py \
+                        -mapper 'python3 mapper.py' \
+                        -reducer 'python3 reducer.py' \
+                        -input gs://$GCS_BUCKET/input_data/ \
+                        -output gs://$GCS_BUCKET/output_data/
+                    """
+                }
+            }
+        }
+ */       
     }
+/*
+    post {
+        failure {
+            echo 'Pipeline failed!'
+        }
+        success {
+            echo 'Pipeline succeeded!'
+        }
+    }
+ */  
 }
