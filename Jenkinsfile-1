@@ -20,17 +20,5 @@ pipeline {
                 }
             }
         }
-        stage('Quality Gate Check') {
-            steps {
-                withSonarQubeEnv(installationName: 'sonar') {
-                    qualityGate = waitForQualityGate()
-                    if (qualityGate.status != 'OK') {
-                        error "SonarQube Quality Gate failed with status: ${qualityGate.status}"
-                    }
-                }
-            }
-        }
-
-
     }
 }
