@@ -20,8 +20,10 @@ pipeline {
             steps {
                 withSonarQubeEnv(installationName: 'sonar') {
                     script {
-                        echo 'Starting SonarQube Analysis'    
-                        sh 'mvn clean install sonar:sonar -Dsonar.projectKey=jenkins'
+                        echo 'Starting SonarQube Analysis'
+                        withMaven(maven: 'Maven 3.x') {
+                            sh 'mvn clean install sonar:sonar -Dsonar.projectKey=jenkins'
+                        }
                         def qualityGate = waitForQualityGate()
                         if (qualityGate.status != 'OK') {
                             error "SonarQube Quality Gate failed, stopping the pipeline!"
