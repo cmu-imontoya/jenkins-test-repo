@@ -1,7 +1,11 @@
 pipeline {
+    agent any
     environment {
-        SONARQUBE_URL = 'http://sonarqube:9000'
+        SONARQUBE_URL = 'http://34.138.255.10:9000'
         GITHUB_REPO = 'https://github.com/cmu-imontoya/jenkins-test-repo'
+        GCP_BUCKET = 'dataproc-bucket-11-14-2024'
+        HADOOP_CLUSTER_NAME = 'project-option1' 
+        REGION = 'us-east1'
     }
 
     stages {
@@ -14,98 +18,55 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv(installationName: 'sonar') {
-                    script {
-                        echo 'Starting SonarQube Analysis'
+                script {
+                    def qualityGate = waitForQualityGate()
+                    if (qualityGate.status != 'OK') {
+                        error "SonarQube Quality Gate failed, stopping the pipeline!"
                     }
+                    echo 'SonarQube Quality Gate Passed'
                 }
             }
         }
 
-        stage('Wait for SonarQube Analysis') {
+        stage('Run Hadoop') {
             steps {
                 script {
-                    echo 'Waiting for SonarQube Analysis to finish...'
-                    timeout(time: 1, unit: 'HOURS') {
-                        waitForQualityGate abortPipeline: true
-                    }
-                }
-            }
-        }
-
-        stage('Run Hadoop Job on Cloud Cluster') {
-            when {
-                expression {
-                    return currentBuild.result == 'SUCCESS'
-                }
-            }
-            steps {
-                echo 'Running Hadoop MapReduce Job on Cloud Cluster'
-
-                script {
-                    echo 'Moving data to HDFS...'
                     sh """
-                        hadoop fs -put /local/path/to/data/* ${HDFS_INPUT_PATH}
-                    """
-                }
-
-                script {
-                    echo 'Copying Mapper and Reducer to Hadoop Cluster...'
-                    sh """
-                        scp temperature_mapper.py user@hadoop_cluster:/path/to/mapper/
-                        scp temperature_reducer.py user@hadoop_cluster:/path/to/reducer/
-                    """
-                }
-
-                script {
-                    echo 'Executing Hadoop MapReduce Job...'
-                    sh """
-                        hadoop jar ${HADOOP_HOME}/share/hadoop/tools/lib/hadoop-streaming-*.jar \
-                            -file /path/to/mapper/temperature_mapper.py \
-                            -mapper 'python /path/to/mapper/temperature_mapper.py' \
-                            -file /path/to/reducer/temperature_reducer.py \
-                            -reducer 'python /path/to/reducer/temperature_reducer.py' \
-                            -input ${HDFS_INPUT_PATH} \
-                            -output ${HDFS_OUTPUT_PATH}
-                    """
-                }
-
-                script {
-                    echo 'Retrieving results from Hadoop...'
-                    sh """
-                        hadoop fs -getmerge ${HDFS_OUTPUT_PATH} ${LOCAL_TEMP_RESULTS}
-                    """
-                    sh """
-                        cat ${LOCAL_TEMP_RESULTS}
-                    """
-                }
-
-                script {
-                    echo 'Copying results to Cloud Bucket...'
-                    sh """
-                        gsutil cp ${LOCAL_TEMP_RESULTS} gs://my-bucket/tempResults/
+                    gsutil ls ${GCP_BUCKET}/
+                    gsutil cp -r ${GCP_BUCKET}/max_temperature/ .
+                    cd max_temperature/
+                    hadoop fs -put data/ /
+                    hadoop jar /usr/lib/hadoop/hadoop-streaming.jar \
+                        -file temperature_mapper.py \
+                        -mapper 'python temperature_mapper.py' \
+                        -file temperature_reducer.py \
+                        -reducer 'python temperature_reducer.py' \
+                        -input /data/*/ \
+                        -output /TempOutFolder
+                    hadoop fs -getmerge /TempOutFolder tempResults
                     """
                 }
             }
         }
 
-        stage('Clean Up') {
+        stage('Upload TempResults bucket') {
             steps {
-                echo 'Cleaning up resources...'
-                sh """
-                    hadoop fs -rm -r ${HDFS_OUTPUT_PATH}
-                    rm ${LOCAL_TEMP_RESULTS}
-                """
+                script {
+                    sh """
+                    gsutil cp tempResults ${GCP_BUCKET}/tempResults
+                    """
+                    echo 'TempResults uploaded to Google Cloud Storage.'
+                }
             }
         }
     }
-
+    
     post {
         success {
-            echo 'Pipeline executed successfully!'
+            echo 'Pipeline completed successfully.'
         }
         failure {
-            echo 'Pipeline failed!'
+            echo 'Pipeline failed.'
         }
     }
 }
