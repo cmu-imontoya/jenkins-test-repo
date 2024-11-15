@@ -14,7 +14,8 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv(installationName: 'sonar') {
+                withSonarQubeEnv('ServerNameSonar') {
+                    bat '''mvn clean verify sonar:sonar -Dsonar.projectKey=ProjectNameSonar -Dsonar.projectName='ProjectNameSonar' -Dsonar.host.url=http://localhost:9000'''
                     echo 'SonarQube Analysis Completed'
                 }
             }
@@ -25,8 +26,6 @@ pipeline {
                     qualityGate = waitForQualityGate()
                     if (qualityGate.status != 'OK') {
                         error "SonarQube Quality Gate failed with status: ${qualityGate.status}"
-                    } else {
-                        echo 'SonarQube Analysis Completed'
                     }
                 }
             }
