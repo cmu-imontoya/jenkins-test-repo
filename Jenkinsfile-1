@@ -21,7 +21,7 @@ pipeline {
                 withSonarQubeEnv(installationName: 'sonar') {
                     script {
                         echo 'Starting SonarQube Analysis'
-                        withMaven(maven: 'Maven 3.x') {
+                        withMaven(maven: 'Maven 3.9.9') {
                             sh 'mvn clean install sonar:sonar -Dsonar.projectKey=jenkins'
                         }
                         def qualityGate = waitForQualityGate()
