@@ -17,9 +17,10 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            withSonarQubeEnv(installationName: 'sonar') {
-                steps {
+            steps {
+                withSonarQubeEnv(installationName: 'sonar') {
                     script {
+                        echo 'Starting SonarQube Analysis'
                         def qualityGate = waitForQualityGate()
                         if (qualityGate.status != 'OK') {
                             error "SonarQube Quality Gate failed, stopping the pipeline!"
