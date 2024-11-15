@@ -23,7 +23,9 @@ pipeline {
                       -Dsonar.login=c1811b63-ca06-47a4-9ff4-ee9febc11f02
                     '''
                     echo 'SonarQube Analysis Completed'
-                }
+                }
+            }
         }
     }
 }
+
