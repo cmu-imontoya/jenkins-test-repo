@@ -1,9 +1,5 @@
 pipeline {
     agent any
-
-    tools {
-    }
-
     environment {
         HADOOP_HOME = '/usr/local/hadoop'
         HDFS_INPUT_PATH = '/data/input/'
