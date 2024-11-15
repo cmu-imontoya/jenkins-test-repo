@@ -21,7 +21,7 @@ pipeline {
         }
         stage('Quality Gate Check') {
             steps {
-                script {
+                withSonarQubeEnv(installationName: 'sonar') {
                     def qualityGate = waitForQualityGate()
                     if (qualityGate.status != 'OK') {
                         error "SonarQube Quality Gate failed with status: ${qualityGate.status}"
