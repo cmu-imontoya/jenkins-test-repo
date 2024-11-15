@@ -1,11 +1,4 @@
 pipeline {
-    agent {
-        docker {
-            image 'sonarsource/sonar-scanner-cli:latest'
-            args '--privileged'
-        }
-    }
-
     environment {
         SONARQUBE_URL = 'http://sonarqube:9000'
         GITHUB_REPO = 'https://github.com/cmu-imontoya/jenkins-test-repo'
