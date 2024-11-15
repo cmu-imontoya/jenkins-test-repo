@@ -1,12 +1,14 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'sonarsource/sonar-scanner-cli:latest'
+            args '--privileged'
+        }
+    }
+
     environment {
-        HADOOP_HOME = '/usr/local/hadoop'
-        HDFS_INPUT_PATH = '/data/input/'
-        HDFS_OUTPUT_PATH = '/TempOutFolder'
-        LOCAL_TEMP_RESULTS = '/tmp/tempResults'
-        GITHUB_REPO = 'https://github.com/cmu-imontoya/jenkins-test-repo'
         SONARQUBE_URL = 'http://sonarqube:9000'
+        GITHUB_REPO = 'https://github.com/cmu-imontoya/jenkins-test-repo'
     }
 
     stages {
